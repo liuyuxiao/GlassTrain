@@ -1,12 +1,16 @@
 package com.example.cam;
 
-/**
- * @author Jose Davis Nidhin
- */
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.buaa.network.HttpUtil;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 import android.app.Activity;
 import android.content.Context;
@@ -16,6 +20,7 @@ import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.ShutterCallback;
 import android.os.Bundle;
 import android.os.Environment;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceView;
@@ -166,4 +171,58 @@ public class CamTestActivity extends Activity {
 			Log.d(TAG, "onPictureTaken - jpeg");
 		}
 	};
+	
+	
+	public void upload(String message) {
+
+		RequestParams params = new RequestParams();
+		params.put("cmd", "send");
+		params.put("message", message.trim());
+		HttpUtil.post(params, new JsonHttpResponseHandler() {
+
+			@Override
+			public void onSuccess(JSONObject jsonobject) {
+				// TODO Auto-generated method stub
+				super.onSuccess(jsonobject);
+				String statuscode = null;
+				try {
+					statuscode = jsonobject.getString("code");
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				System.out.println("fa bu onsuccess" + statuscode.toString());
+				if (statuscode.equalsIgnoreCase("200")) {
+					//status = 1;
+				}
+				if (statuscode.equalsIgnoreCase("403")) {
+					//status = 2;
+				}
+				if (statuscode.equalsIgnoreCase("404")) {
+					//status = 3;
+				}
+
+			}
+
+			public void onFailure(Throwable arg0) { // 失败，调用
+				System.out.println("onfailure");
+				//status = 2;
+			}
+
+			public void onFinish() { // 完成后调用，失败，成功，都要掉
+				System.out.println("onfinish");
+			}
+
+			@Override
+			protected void handleFailureMessage(Throwable arg0, String arg1) {
+				// TODO Auto-generated method stub
+
+				super.handleFailureMessage(arg0, arg1);
+				//status = 2;
+				System.out.println("onfailuremessage" + arg0 + arg1);
+			};
+
+		});
+	}
 }
