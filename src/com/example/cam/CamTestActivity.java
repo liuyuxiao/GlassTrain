@@ -1,6 +1,7 @@
 package com.example.cam;
 
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import com.loopj.android.http.RequestParams;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.PictureCallback;
@@ -42,6 +44,7 @@ public class CamTestActivity extends Activity {
 	Activity act;
 	Context ctx;
 	Button uploadButton;
+	String trainName ;
 	private int picCount = 0;
 	String APP_SDCARD_FOLDER = 
 	            Environment.getExternalStorageDirectory().getAbsolutePath();
@@ -49,6 +52,12 @@ public class CamTestActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		Intent intent = getIntent(); //用于激活它的意图对象
+        
+		trainName = intent.getStringExtra("Name");
+        System.out.println("user name "+trainName);
+		
 		ctx = this;
 		act = this;
 		picCount = 0;
@@ -56,6 +65,8 @@ public class CamTestActivity extends Activity {
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 		setContentView(R.layout.main);
+		
+		//LinearLayout myLayout = new LinearLayout(context);  
 		
 		preview = new Preview(this, (SurfaceView)findViewById(R.id.surfaceView));
 		preview.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
@@ -84,20 +95,22 @@ public class CamTestActivity extends Activity {
 			}
 		});
 		
-		//Use code to create button
-		uploadButton = new Button(ctx);
-		uploadButton.setWidth(LayoutParams.WRAP_CONTENT);
-		uploadButton.setHeight(LayoutParams.WRAP_CONTENT);
-		uploadButton.setText("上传");
-		uploadButton.setGravity(Gravity.CENTER);
-		    
-
-		uploadButton.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				//TODO connet the server
-				
-			}
-		});
+//		//Use code to create button
+//		uploadButton = new Button(ctx);
+//		uploadButton.setWidth(LayoutParams.WRAP_CONTENT);
+//		uploadButton.setHeight(LayoutParams.WRAP_CONTENT);
+//		uploadButton.setText("upload");
+//		uploadButton.setGravity(Gravity.CENTER);
+//		//uploadButton.setVisibility(0);
+//		    
+//		//preview.addView(uploadButton);
+//		
+//		uploadButton.setOnClickListener(new OnClickListener() {
+//			public void onClick(View v) {
+//				//TODO connet the server
+//				
+//			}
+//		});
 		
 	}
 
@@ -145,20 +158,35 @@ public class CamTestActivity extends Activity {
 				// Write to SD Card
 				String Filename = System.currentTimeMillis()+"";
 				String storepath = APP_SDCARD_FOLDER+"/liuyuxiao/";
+				File destDir = new File(storepath);
+				  if (!destDir.exists()) {
+				   destDir.mkdirs();
+				  }
+
 				fileName = String.format("%s.jpg", Filename);
 				outStream = new FileOutputStream(storepath+fileName);
 				outStream.write(data);
 				outStream.close();
 				Log.d(TAG, "onPictureTaken - wrote bytes: " + data.length);
+				
+				upload(new File(storepath+fileName));
+				
+				System.out.println("批次countchange"+picCount);
 				// 计数增加
 				picCount ++;
-				if(picCount == 2)
+				//System.out.println("pic count"+picCount);
+				if(picCount == 3)
 				{
+					buttonClick.setText("上传");
+					
+					buttonClick.setOnClickListener(new OnClickListener() {
+						public void onClick(View v) {
+							startTrain();
+						}
+					});
 					
 				}
-				else{
 				resetCam();
-				}
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 				System.out.println(e.toString());
@@ -173,11 +201,17 @@ public class CamTestActivity extends Activity {
 	};
 	
 	
-	public void upload(String message) {
+	public void upload(File myfile) {
 
 		RequestParams params = new RequestParams();
-		params.put("cmd", "send");
-		params.put("message", message.trim());
+		params.put("person_name", trainName);
+		try {
+			System.out.println("file size"+myfile.length());
+			params.put("file", myfile);
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		HttpUtil.post(params, new JsonHttpResponseHandler() {
 
 			@Override
@@ -192,17 +226,7 @@ public class CamTestActivity extends Activity {
 					e.printStackTrace();
 				}
 
-				System.out.println("fa bu onsuccess" + statuscode.toString());
-				if (statuscode.equalsIgnoreCase("200")) {
-					//status = 1;
-				}
-				if (statuscode.equalsIgnoreCase("403")) {
-					//status = 2;
-				}
-				if (statuscode.equalsIgnoreCase("404")) {
-					//status = 3;
-				}
-
+				System.out.println("return json data"+jsonobject.toString());
 			}
 
 			public void onFailure(Throwable arg0) { // 失败，调用
@@ -223,6 +247,48 @@ public class CamTestActivity extends Activity {
 				System.out.println("onfailuremessage" + arg0 + arg1);
 			};
 
-		});
+		},"/postAddFace/");
+	}
+	
+	public void startTrain() {
+
+		RequestParams params = new RequestParams();
+		//params.put("request", "train");
+		HttpUtil.post(null, new JsonHttpResponseHandler() {
+
+			@Override
+			public void onSuccess(JSONObject jsonobject) {
+				// TODO Auto-generated method stub
+				super.onSuccess(jsonobject);
+				String statuscode = null;
+				try {
+					statuscode = jsonobject.getString("code");
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				System.out.println("return json data"+jsonobject.toString());
+			}
+
+			public void onFailure(Throwable arg0) { // 失败，调用
+				System.out.println("onfailure");
+				//status = 2;
+			}
+
+			public void onFinish() { // 完成后调用，失败，成功，都要掉
+				System.out.println("onfinish");
+			}
+
+			@Override
+			protected void handleFailureMessage(Throwable arg0, String arg1) {
+				// TODO Auto-generated method stub
+
+				super.handleFailureMessage(arg0, arg1);
+				//status = 2;
+				System.out.println("onfailuremessage" + arg0 + arg1);
+			};
+
+		},"/postTrain/");
 	}
 }

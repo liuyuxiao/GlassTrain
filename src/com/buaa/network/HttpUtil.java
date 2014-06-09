@@ -7,15 +7,20 @@ import com.loopj.android.http.RequestParams;
 
 public class HttpUtil {
     private static     AsyncHttpClient client =new AsyncHttpClient();   
-    private static String baseurl = "http://app.feimou.com";
+    private static String baseurl = "http://115.28.246.138:8080";
     
     static
     {
-        client.setTimeout(10000);  
+        client.setTimeout(50000);  
     }
     public static void get(RequestParams params,AsyncHttpResponseHandler res)  
     {
         client.get(baseurl, params,res);
+    }
+    public static void get(String params,JsonHttpResponseHandler res)  
+    {
+     
+        client.get(baseurl +params, null,res);
     }
     public static void get(String urlString,RequestParams params,JsonHttpResponseHandler res)   
     {
@@ -29,9 +34,11 @@ public class HttpUtil {
     {
         return client;
     }
-    public static void post(RequestParams params,JsonHttpResponseHandler res) 
+    public static void post(RequestParams params,JsonHttpResponseHandler res,String addpath) 
     {
-    	client.post(baseurl, params, res);
+    	client.post(baseurl+addpath, params, res);
+    	System.out.println("client message"+client.getHttpClient().getParams());
+    	//System.out.println("client message url"+client.getHttpClient());
     }
 	public static void post(RequestParams params,
 			AsyncHttpResponseHandler res) {
