@@ -57,6 +57,9 @@ public class CamTestActivity extends Activity {
         
 		trainName = intent.getStringExtra("Name");
         System.out.println("user name "+trainName);
+        
+        
+        startAddPic();
 		
 		ctx = this;
 		act = this;
@@ -248,6 +251,49 @@ public class CamTestActivity extends Activity {
 			};
 
 		},"/postAddFace/");
+	}
+	
+	
+	public void startAddPic() {
+
+		RequestParams params = new RequestParams();
+		params.put("person_name", trainName);
+		HttpUtil.post(null, new JsonHttpResponseHandler() {
+
+			@Override
+			public void onSuccess(JSONObject jsonobject) {
+				// TODO Auto-generated method stub
+				super.onSuccess(jsonobject);
+				String statuscode = null;
+				try {
+					statuscode = jsonobject.getString("code");
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				System.out.println("return json data"+jsonobject.toString());
+			}
+
+			public void onFailure(Throwable arg0) { // 失败，调用
+				System.out.println("onfailure");
+				//status = 2;
+			}
+
+			public void onFinish() { // 完成后调用，失败，成功，都要掉
+				System.out.println("onfinish");
+			}
+
+			@Override
+			protected void handleFailureMessage(Throwable arg0, String arg1) {
+				// TODO Auto-generated method stub
+
+				super.handleFailureMessage(arg0, arg1);
+				//status = 2;
+				System.out.println("onfailuremessage" + arg0 + arg1);
+			};
+
+		},"/postAddPerson/");
 	}
 	
 	public void startTrain() {
